@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use bevy::{math::ivec3, prelude::*, utils::HashSet};
-use derive_more::Add;
+use bevy_xpbd_3d::components::Collider;
+use derive_more::{Add, AddAssign};
 use itertools::Itertools;
 use num_traits::{FromPrimitive, ToPrimitive};
 use parking_lot::RwLock;
@@ -20,7 +21,7 @@ pub fn iter_blocks() -> impl Iterator<Item = (usize, usize, usize)> {
         .map(|((x, y), z)| (x, y, z))
 }
 
-#[derive(Component, Debug, Clone, Copy, Hash, Deref, PartialEq, Eq, Add)]
+#[derive(Component, Debug, Clone, Copy, Hash, Deref, PartialEq, Eq, Add, AddAssign)]
 pub struct ChunkPos(IVec3);
 
 impl ChunkPos {
@@ -311,7 +312,7 @@ impl AdjacentEdges {
     }
 }
 
-pub async fn generate_mesh(chunk: Chunk, adjacent: AdjacentChunks) -> Mesh {
+pub async fn generate_mesh(chunk: Chunk, adjacent: AdjacentChunks) -> (Mesh, Option<Collider>) {
     let mut mesh_builder = MeshBuilder::new();
     let edges = adjacent.compute_edges();
     let chunk = chunk.read();
@@ -334,5 +335,13 @@ pub async fn generate_mesh(chunk: Chunk, adjacent: AdjacentChunks) -> Mesh {
     }
 
     drop(chunk);
-    mesh_builder.build()
+    let mesh = mesh_builder.build();
+
+    let collider = if mesh.count_vertices() > 0 {
+        Collider::trimesh_from_mesh(&mesh)
+    } else {
+        None
+    };
+
+    (mesh, collider)
 }

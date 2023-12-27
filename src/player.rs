@@ -4,13 +4,10 @@ use bevy::{
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
+use bevy_xpbd_3d::prelude::*;
 use big_space::{FloatingOrigin, GridCell};
 
-use crate::{
-    chunk::CHUNK_SIZE,
-    physics::{Hitbox, Velocity},
-    GameState,
-};
+use crate::{chunk::CHUNK_SIZE, GameState};
 
 pub struct PlayerPlugin;
 
@@ -24,13 +21,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(Startup, (setup_player, setup_input))
             .add_systems(
                 Update,
-                (
-                    player_look,
-                    player_move,
-                    toggle_grab_cursor,
-                    update_fog,
-                    gizmo,
-                )
+                (player_look, player_move, toggle_grab_cursor, update_fog)
                     .run_if(in_state(GameState::InGame)),
             );
     }
@@ -41,7 +32,7 @@ pub struct RenderDistance(pub i32);
 
 impl Default for RenderDistance {
     fn default() -> Self {
-        Self(10)
+        Self(4)
     }
 }
 
@@ -79,10 +70,14 @@ fn setup_player(mut commands: Commands) {
         .spawn((
             Player,
             SpatialBundle::default(),
-            GridCell::<i32>::new(0, 1, 0),
+            GridCell::<i32>::new(0, 2, 0),
             FloatingOrigin,
-            Velocity::default(),
-            Hitbox(Vec3::new(0.9, 1.8, 0.9)),
+            RigidBody::Dynamic,
+            LockedAxes::ROTATION_LOCKED,
+            LinearVelocity::default(),
+            Friction::new(0.0),
+            Restitution::new(0.0),
+            Collider::cuboid(0.9, 1.9, 0.9),
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -92,28 +87,15 @@ fn setup_player(mut commands: Commands) {
                         hdr: true,
                         ..default()
                     },
-                    transform: Transform::from_xyz(0.0, 1.0, 0.0),
+                    transform: Transform::from_xyz(0.0, 1.5, 0.0),
                     ..default()
                 },
                 FogSettings {
-                    color: Color::rgba(0.2, 0.5, 0.8, 1.0),
+                    color: Color::rgba(0.2, 0.5, 0.8, 0.0), // todo: add fog back after debugging
                     ..default()
                 },
             ));
         });
-}
-
-fn gizmo(mut gizmos: Gizmos, player: Query<(&GlobalTransform, &Hitbox), With<Player>>) {
-    let (global_transform, hitbox) = player.single();
-
-    gizmos.cuboid(
-        Transform {
-            translation: global_transform.translation(),
-            scale: hitbox.0,
-            ..default()
-        },
-        Color::RED,
-    );
 }
 
 fn setup_input(mut window: Query<&mut Window, With<PrimaryWindow>>) {
@@ -173,18 +155,9 @@ fn player_move(
     time: Res<Time>,
     keyboard: Res<Input<KeyCode>>,
     movement_speed: Res<MovementSpeed>,
-    window: Query<&Window, With<PrimaryWindow>>,
     camera: Query<&Transform, With<PlayerCamera>>,
-    mut player: Query<&mut Velocity, With<Player>>,
+    mut player: Query<&mut LinearVelocity, With<Player>>,
 ) {
-    let Ok(window) = window.get_single() else {
-        return;
-    };
-
-    if window.cursor.grab_mode == CursorGrabMode::None {
-        return;
-    }
-
     let camera_transform = camera.single();
     let mut velocity = player.single_mut();
 
@@ -207,10 +180,14 @@ fn player_move(
     apply!(+= right if KeyCode::D);
     apply!(-= right if KeyCode::A);
 
-    velocity.0 += movement.normalize_or_zero() * time.delta_seconds() * movement_speed.0;
+    velocity.0 +=
+        (movement.normalize_or_zero() * time.delta_seconds() * movement_speed.0).as_dvec3();
+
+    velocity.0.x *= (1.0 - time.delta_seconds() * 8.0).max(0.0) as f64;
+    velocity.0.z *= (1.0 - time.delta_seconds() * 8.0).max(0.0) as f64;
 
     if keyboard.just_pressed(KeyCode::Space) {
-        velocity.0.y = 10.0;
+        velocity.y = 7.0;
     }
 }
 

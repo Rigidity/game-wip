@@ -7,6 +7,7 @@ use bevy::{
     tasks::{block_on, AsyncComputeTaskPool, Task},
     utils::HashMap,
 };
+use bevy_xpbd_3d::prelude::*;
 use big_space::GridCell;
 use futures_lite::future;
 use itertools::Itertools;
@@ -61,7 +62,7 @@ impl Level {
 struct GenerateChunkTask(Task<Chunk>);
 
 #[derive(Component)]
-struct BuildMeshTask(Task<Mesh>);
+struct BuildMeshTask(Task<(Mesh, Option<Collider>)>);
 
 #[derive(Component)]
 struct Dirty;
@@ -146,6 +147,7 @@ fn update_chunks(
     ));
 
     let visible_chunks = center.chunks_within_radius(render_distance.0);
+    println!("{}", visible_chunks.len());
 
     let thread_pool = AsyncComputeTaskPool::get();
 
@@ -180,12 +182,7 @@ fn update_chunks(
         commands
             .entity(entity)
             .remove::<GenerateChunkTask>()
-            .insert((
-                SpatialBundle::default(),
-                GridCell::<i32>::new(pos.x, pos.y, pos.z),
-                Dirty,
-                material.0.clone(),
-            ));
+            .insert((Dirty, material.0.clone()));
     }
 
     // Regenerate chunks
@@ -237,7 +234,16 @@ fn update_chunks(
 
             Arc::new(RwLock::new(chunk_data))
         });
-        commands.spawn((pos, GenerateChunkTask(task)));
+
+        commands.spawn((
+            pos,
+            SpatialBundle::default(),
+            GridCell::<i32>::new(pos.x, pos.y, pos.z),
+            RigidBody::Static,
+            Friction::new(0.0),
+            Restitution::new(0.0),
+            GenerateChunkTask(task),
+        ));
     }
 
     // Despawn chunks
@@ -261,12 +267,17 @@ fn build_meshes(
 
     // Insert mesh
     for (entity, mut task) in pending.iter_mut() {
-        let Some(mesh) = block_on(future::poll_once(&mut task.0)) else {
+        let Some((mesh, collider)) = block_on(future::poll_once(&mut task.0)) else {
             continue;
         };
 
-        commands
-            .entity(entity)
+        let mut entity = commands.entity(entity);
+
+        if let Some(collider) = collider {
+            entity.insert(collider);
+        }
+
+        entity
             .remove::<BuildMeshTask>()
             .remove::<Aabb>()
             .insert(meshes.add(mesh));
