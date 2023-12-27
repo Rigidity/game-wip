@@ -46,7 +46,7 @@ pub struct MovementSpeed(pub f32);
 
 impl Default for MovementSpeed {
     fn default() -> Self {
-        Self(80.0)
+        Self(100.0)
     }
 }
 
@@ -77,7 +77,7 @@ fn setup_player(mut commands: Commands) {
             LinearVelocity::default(),
             Friction::new(0.0),
             Restitution::new(0.0),
-            Collider::cuboid(0.9, 1.9, 0.9),
+            Collider::cuboid(0.8, 1.7, 0.8),
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -91,7 +91,7 @@ fn setup_player(mut commands: Commands) {
                     ..default()
                 },
                 FogSettings {
-                    color: Color::rgba(0.2, 0.5, 0.8, 0.0), // todo: add fog back after debugging
+                    color: Color::rgba(0.2, 0.5, 0.8, 1.0),
                     ..default()
                 },
             ));
@@ -183,11 +183,11 @@ fn player_move(
     velocity.0 +=
         (movement.normalize_or_zero() * time.delta_seconds() * movement_speed.0).as_dvec3();
 
-    velocity.0.x *= (1.0 - time.delta_seconds() * 8.0).max(0.0) as f64;
-    velocity.0.z *= (1.0 - time.delta_seconds() * 8.0).max(0.0) as f64;
+    velocity.0.x *= (1.0 - time.delta_seconds() * 10.0).max(0.0) as f64;
+    velocity.0.z *= (1.0 - time.delta_seconds() * 10.0).max(0.0) as f64;
 
     if keyboard.just_pressed(KeyCode::Space) {
-        velocity.y = 7.0;
+        velocity.y = 9.0;
     }
 }
 

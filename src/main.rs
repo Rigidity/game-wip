@@ -64,7 +64,7 @@ fn main() {
         .add_collection_to_loading_state::<_, GameAssets>(GameState::LoadingAssets)
         .insert_resource(FloatingOriginSettings::new(CHUNK_SIZE as f32, 0.0))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.5, 0.8)))
-        .insert_resource(Gravity(DVec3::NEG_Y * 19.6))
+        .insert_resource(Gravity(DVec3::NEG_Y * 26.0))
         .insert_resource(AmbientLight {
             color: Color::WHITE,
             brightness: 0.85,

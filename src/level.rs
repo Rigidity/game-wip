@@ -30,8 +30,16 @@ impl Plugin for LevelPlugin {
             .add_systems(OnEnter(GameState::InGame), setup_material)
             .add_systems(
                 Update,
-                (update_chunks, build_meshes).run_if(in_state(GameState::InGame)),
+                (update_chunks, build_meshes, debugger).run_if(in_state(GameState::InGame)),
             );
+    }
+}
+
+fn debugger(query: Query<(&ChunkPos, &GridCell<i32>)>) {
+    for (chunk_pos, grid_cell) in query.iter() {
+        if chunk_pos.x != grid_cell.x || chunk_pos.y != grid_cell.y || chunk_pos.z != grid_cell.z {
+            println!("{chunk_pos:?} in grid cell {grid_cell:?}");
+        }
     }
 }
 
@@ -147,7 +155,6 @@ fn update_chunks(
     ));
 
     let visible_chunks = center.chunks_within_radius(render_distance.0);
-    println!("{}", visible_chunks.len());
 
     let thread_pool = AsyncComputeTaskPool::get();
 
