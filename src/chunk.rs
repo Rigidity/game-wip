@@ -97,7 +97,7 @@ pub type Chunk = Arc<RwLock<ChunkData>>;
 
 #[derive(Clone)]
 pub struct ChunkData {
-    blocks: Vec<Option<Block>>,
+    pub blocks: Vec<Option<Block>>,
 }
 
 impl ChunkData {
@@ -133,8 +133,12 @@ impl ChunkData {
         }
 
         if let Some(block_type) = last {
-            data.extend((count as u16).to_be_bytes());
-            data.push(block_type);
+            if data.is_empty() {
+                data.push(block_type);
+            } else {
+                data.extend((count as u16).to_be_bytes());
+                data.push(block_type);
+            }
         }
 
         data
@@ -145,6 +149,16 @@ impl ChunkData {
         let mut chunk = Self {
             blocks: Vec::with_capacity(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE),
         };
+
+        if data.len() == 1 {
+            for _ in 0..chunk.blocks.len() {
+                if data[0] == 0 {
+                    chunk.blocks.push(None);
+                } else {
+                    chunk.blocks.push(Some(Block::from_u8(data[0] - 1)?));
+                }
+            }
+        }
 
         while pos + 2 < data.len() {
             let count = u16::from_be_bytes([data[pos], data[pos + 1]]);

@@ -32,7 +32,7 @@ pub struct RenderDistance(pub i32);
 
 impl Default for RenderDistance {
     fn default() -> Self {
-        Self(4)
+        Self(10)
     }
 }
 
@@ -70,7 +70,7 @@ fn setup_player(mut commands: Commands) {
         .spawn((
             Player,
             SpatialBundle::default(),
-            GridCell::<i32>::new(0, 2, 0),
+            GridCell::<i32>::new(0, 0, 0),
             FloatingOrigin,
             RigidBody::Dynamic,
             LockedAxes::ROTATION_LOCKED,

@@ -12,7 +12,7 @@ pub enum Block {
     Dirt,
     Grass,
     Rock,
-    Debug,
+    Sand,
 }
 
 impl Block {
@@ -23,7 +23,7 @@ impl Block {
             Self::Grass if face == BlockFace::Bottom => 0,
             Self::Grass => 1,
             Self::Rock => 3,
-            Self::Debug => 3,
+            Self::Sand => 4,
         }
     }
 }

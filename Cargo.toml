@@ -14,6 +14,8 @@ noise = "0.8.2"
 num-derive = "0.4.1"
 num-traits = "0.2.17"
 parking_lot = "0.12.1"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
 rusqlite = { version = "0.30.0", features = ["bundled"] }
 
 [dependencies.bevy_xpbd_3d]
@@ -26,7 +28,7 @@ git = "https://github.com/austincummings/big_space"
 branch = "xpbd-compat"
 
 [patch.crates-io]
-bevy_xpbd_3d = { git = "https://github.com/Jondolf/bevy_xpbd", branch = "ignore-static-collisions" }
+bevy_xpbd_3d = { git = "https://github.com/Jondolf/bevy_xpbd" }
 
 [profile.dev]
 opt-level = 1

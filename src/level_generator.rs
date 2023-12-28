@@ -1,6 +1,9 @@
 use bevy::math::I64Vec3;
+use bevy::prelude::*;
 use itertools::Itertools;
 use noise::{NoiseFn, Perlin};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 use crate::{
     block::Block,
@@ -8,30 +11,40 @@ use crate::{
 };
 
 pub struct LevelGenerator {
-    perlin: Perlin,
     surface_level: f64,
     scale_factor: f64,
+    height_map: NoiseMap,
+    density_map: NoiseMap,
+}
 
-    amplitude: f64,
-    frequency: f64,
-    octaves: usize,
-    persistence: f64,
-    lacunarity: f64,
+impl LevelGenerator {
+    pub fn new(seed: u64) -> Self {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+
+        Self {
+            surface_level: 400.0,
+            scale_factor: 250.0,
+            height_map: NoiseMap {
+                perlin: Perlin::new(rng.gen()),
+                octaves: 4,
+                amplitude: 15.0,
+                frequency: 2.0,
+                ..default()
+            },
+            density_map: NoiseMap {
+                perlin: Perlin::new(rng.gen()),
+                octaves: 2,
+                amplitude: 15.0,
+                frequency: 2.0,
+                ..default()
+            },
+        }
+    }
 }
 
 impl Default for LevelGenerator {
     fn default() -> Self {
-        Self {
-            perlin: Perlin::new(0),
-            surface_level: 40.0,
-            scale_factor: 350.0,
-
-            amplitude: 15.0,
-            frequency: 2.5,
-            octaves: 4,
-            persistence: 0.5,
-            lacunarity: 2.0,
-        }
+        Self::new(0)
     }
 }
 
@@ -51,28 +64,64 @@ impl LevelGenerator {
     }
 
     fn generate_block(&self, pos: I64Vec3) -> Option<Block> {
-        let height = self.evaluate_fbm(
+        let density = self.density_map.value_3d(
             pos.x as f64 / self.scale_factor,
+            pos.y as f64 / self.scale_factor,
             pos.z as f64 / self.scale_factor,
-        ) as i64;
+        );
 
-        if pos.y == height {
-            Some(Block::Grass)
-        } else if pos.y < height && pos.y >= height - 3 {
-            Some(Block::Dirt)
-        } else if pos.y < height {
+        if density > 0.96 {
             Some(Block::Rock)
         } else {
             None
         }
     }
+}
 
-    fn evaluate_fbm(&self, x: f64, y: f64) -> f64 {
+struct NoiseMap {
+    perlin: Perlin,
+    octaves: usize,
+    amplitude: f64,
+    frequency: f64,
+    persistence: f64,
+    lacunarity: f64,
+}
+
+impl Default for NoiseMap {
+    fn default() -> Self {
+        Self {
+            perlin: Perlin::default(),
+            octaves: 1,
+            amplitude: 15.0,
+            frequency: 2.0,
+            persistence: 0.5,
+            lacunarity: 2.0,
+        }
+    }
+}
+
+impl NoiseMap {
+    fn value_2d(&self, x: f64, y: f64) -> f64 {
         let mut amplitude = self.amplitude;
         let mut frequency = self.frequency;
         let mut value = 0.0;
         for _ in 0..self.octaves {
             value += amplitude * self.perlin.get([x * frequency, y * frequency]);
+            amplitude *= self.persistence;
+            frequency *= self.lacunarity;
+        }
+        value
+    }
+
+    fn value_3d(&self, x: f64, y: f64, z: f64) -> f64 {
+        let mut amplitude = self.amplitude;
+        let mut frequency = self.frequency;
+        let mut value = 0.0;
+        for _ in 0..self.octaves {
+            value += amplitude
+                * self
+                    .perlin
+                    .get([x * frequency, y * frequency, z * frequency]);
             amplitude *= self.persistence;
             frequency *= self.lacunarity;
         }

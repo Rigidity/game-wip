@@ -30,15 +30,47 @@ impl Plugin for LevelPlugin {
             .add_systems(OnEnter(GameState::InGame), setup_material)
             .add_systems(
                 Update,
-                (update_chunks, build_meshes, debugger).run_if(in_state(GameState::InGame)),
+                (
+                    update_chunks,
+                    build_meshes,
+                    fix_positions, /*remove_chunk*/
+                )
+                    .run_if(in_state(GameState::InGame)),
             );
     }
 }
 
-fn debugger(query: Query<(&ChunkPos, &GridCell<i32>)>) {
-    for (chunk_pos, grid_cell) in query.iter() {
+fn fix_positions(mut query: Query<(&ChunkPos, &mut GridCell<i32>)>) {
+    for (chunk_pos, mut grid_cell) in query.iter_mut() {
         if chunk_pos.x != grid_cell.x || chunk_pos.y != grid_cell.y || chunk_pos.z != grid_cell.z {
-            println!("{chunk_pos:?} in grid cell {grid_cell:?}");
+            grid_cell.x = chunk_pos.x;
+            grid_cell.y = chunk_pos.y;
+            grid_cell.z = chunk_pos.z;
+        }
+    }
+}
+
+fn remove_chunk(
+    mut commands: Commands,
+    level: Res<Level>,
+    player: Query<&GridCell<i32>, With<Player>>,
+    chunks: Query<(&ChunkPos, Entity)>,
+) {
+    let &grid_cell = player.single();
+    let chunk_pos = ChunkPos::new(IVec3::new(grid_cell.x, grid_cell.y - 1, grid_cell.z));
+    let Some(chunk) = level.chunks.get(&chunk_pos) else {
+        return;
+    };
+    for block in chunk.write().blocks.iter_mut() {
+        *block = None;
+    }
+    let entity = chunks.iter().find(|chunk| *chunk.0 == chunk_pos).unwrap().1;
+    commands.entity(entity).insert(Dirty);
+
+    for pos in chunk_pos.adjacent_chunks() {
+        if level.chunks.contains_key(&pos) {
+            let entity = chunks.iter().find(|chunk| *chunk.0 == pos).unwrap().1;
+            commands.entity(entity).insert(Dirty);
         }
     }
 }
@@ -121,7 +153,7 @@ fn setup_material(
     let image_handle = game_assets.block_textures.clone();
     let image = images.get_mut(&image_handle).unwrap();
 
-    image.reinterpret_stacked_2d_as_array(4);
+    image.reinterpret_stacked_2d_as_array(5);
 
     let material_handle = materials.add(ExtendedMaterial {
         base: StandardMaterial {
@@ -282,6 +314,8 @@ fn build_meshes(
 
         if let Some(collider) = collider {
             entity.insert(collider);
+        } else {
+            entity.remove::<Collider>();
         }
 
         entity
