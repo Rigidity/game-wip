@@ -26,7 +26,7 @@ impl LevelGenerator {
             elevation: NoiseMap {
                 perlin: Perlin::new(rng.gen()),
                 octaves: 4,
-                amplitude: 15.0,
+                amplitude: 150.0,
                 frequency: 2.0,
                 ..default()
             },
@@ -61,8 +61,10 @@ impl LevelGenerator {
             pos.z as f64 / self.scale_factor,
         );
 
-        if pos.y as f64 <= self.sea_level + elevation {
-            Some(Block::Rock)
+        if pos.y as f64 <= self.sea_level + elevation - 3.0 {
+            Some(Block::Dirt)
+        } else if pos.y as f64 <= self.sea_level + elevation {
+            Some(Block::Grass)
         } else {
             None
         }

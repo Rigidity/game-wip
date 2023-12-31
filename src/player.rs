@@ -1,6 +1,9 @@
+use std::f64::consts::PI;
+
 use bevy::{
     ecs::event::ManualEventReader,
     input::mouse::MouseMotion,
+    math::{DQuat, DVec3},
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
@@ -78,6 +81,13 @@ fn setup_player(mut commands: Commands) {
             Friction::new(0.0),
             Restitution::new(0.0),
             Collider::cuboid(0.8, 1.7, 0.8),
+            ShapeCaster::new(
+                Collider::cuboid(0.79, 0.1, 0.79),
+                DVec3::ZERO,
+                DQuat::default(),
+                DVec3::NEG_Y,
+            )
+            .with_max_time_of_impact(1.0),
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -87,7 +97,7 @@ fn setup_player(mut commands: Commands) {
                         hdr: true,
                         ..default()
                     },
-                    transform: Transform::from_xyz(0.0, 1.5, 0.0),
+                    transform: Transform::from_xyz(0.0, 1.25, 0.0),
                     ..default()
                 },
                 FogSettings {
@@ -156,10 +166,10 @@ fn player_move(
     keyboard: Res<Input<KeyCode>>,
     movement_speed: Res<MovementSpeed>,
     camera: Query<&Transform, With<PlayerCamera>>,
-    mut player: Query<&mut LinearVelocity, With<Player>>,
+    mut player: Query<(&mut LinearVelocity, &ShapeHits, &Rotation), With<Player>>,
 ) {
     let camera_transform = camera.single();
-    let mut velocity = player.single_mut();
+    let (mut velocity, shape_hits, rotation) = player.single_mut();
 
     let local_z: Vec3 = camera_transform.local_z();
     let forward = -Vec3::new(local_z.x, 0.0, local_z.z);
@@ -186,8 +196,12 @@ fn player_move(
     velocity.0.x *= (1.0 - time.delta_seconds() * 10.0).max(0.0) as f64;
     velocity.0.z *= (1.0 - time.delta_seconds() * 10.0).max(0.0) as f64;
 
-    if keyboard.just_pressed(KeyCode::Space) {
-        velocity.y = 9.0;
+    let on_ground = shape_hits
+        .iter()
+        .any(|hit| rotation.rotate(-hit.normal2).angle_between(DVec3::Y).abs() <= PI * 0.45);
+
+    if keyboard.pressed(KeyCode::Space) && on_ground {
+        velocity.y = 8.0;
     }
 }
 

@@ -3,6 +3,7 @@
 
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,
+    window::WindowResolution,
 };
 use bevy_asset_loader::prelude::*;
 
@@ -41,10 +42,20 @@ pub struct GameAssets {
 }
 
 fn main() {
+    let window = Window {
+        title: "Voxel Game".into(),
+        resolution: WindowResolution::new(1400.0, 800.0),
+        ..default()
+    };
+
     App::new()
         .add_plugins((
             DefaultPlugins
                 .build()
+                .set(WindowPlugin {
+                    primary_window: Some(window),
+                    ..default()
+                })
                 .disable::<TransformPlugin>()
                 .set(ImagePlugin::default_nearest()),
             FrameTimeDiagnosticsPlugin,
@@ -64,7 +75,7 @@ fn main() {
         .add_collection_to_loading_state::<_, GameAssets>(GameState::LoadingAssets)
         .insert_resource(FloatingOriginSettings::new(CHUNK_SIZE as f32, 0.0))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.5, 0.8)))
-        .insert_resource(Gravity(DVec3::NEG_Y * 32.0))
+        .insert_resource(Gravity(DVec3::NEG_Y * 26.0))
         .insert_resource(AmbientLight {
             color: Color::WHITE,
             brightness: 0.85,
