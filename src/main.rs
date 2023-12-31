@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,

@@ -90,7 +90,7 @@ struct GenerateChunkTask(Task<Chunk>);
 struct BuildMeshTask(Task<(Mesh, Option<Collider>)>);
 
 #[derive(Component)]
-struct Dirty;
+pub struct Dirty;
 
 fn setup_level(mut commands: Commands) {
     let conn = Connection::open("chunks.sqlite").unwrap();
@@ -226,6 +226,7 @@ fn update_chunks(
     for &pos in visible_chunks
         .iter()
         .filter(|pos| !chunk_entities.contains_key(*pos))
+        .take(25 - chunk_tasks.len())
     {
         let generator = level.generator.clone();
         let db = level.database.clone();

@@ -26,7 +26,7 @@ impl LevelGenerator {
             elevation: NoiseMap {
                 perlin: Perlin::new(rng.gen()),
                 octaves: 4,
-                amplitude: 150.0,
+                amplitude: 15.0,
                 frequency: 2.0,
                 ..default()
             },

@@ -1,16 +1,21 @@
-use std::f64::consts::PI;
+use std::{f32::consts::PI as PI_32, f64::consts::PI as PI_64};
 
 use bevy::{
     ecs::event::ManualEventReader,
     input::mouse::MouseMotion,
-    math::{DQuat, DVec3},
+    math::{DQuat, DVec3, I64Vec3},
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
 use bevy_xpbd_3d::prelude::*;
 use big_space::{FloatingOrigin, GridCell};
 
-use crate::{chunk::CHUNK_SIZE, GameState};
+use crate::{
+    block::{Block, BlockPos},
+    chunk::{ChunkPos, CHUNK_SIZE},
+    level::{Dirty, Level},
+    GameState,
+};
 
 pub struct PlayerPlugin;
 
@@ -20,11 +25,16 @@ impl Plugin for PlayerPlugin {
             .init_resource::<InputState>()
             .init_resource::<MovementSpeed>()
             .init_resource::<MouseSensitivity>()
-            // Make sure the floating origin is there on startup.
             .add_systems(Startup, (setup_player, setup_input))
             .add_systems(
                 Update,
-                (player_look, player_move, toggle_grab_cursor, update_fog)
+                (
+                    player_look,
+                    player_move,
+                    break_block,
+                    toggle_grab_cursor,
+                    update_fog,
+                )
                     .run_if(in_state(GameState::InGame)),
             );
     }
@@ -97,6 +107,10 @@ fn setup_player(mut commands: Commands) {
                         hdr: true,
                         ..default()
                     },
+                    projection: Projection::Perspective(PerspectiveProjection {
+                        fov: PI_32 / 180.0 * 60.0,
+                        ..default()
+                    }),
                     transform: Transform::from_xyz(0.0, 1.25, 0.0),
                     ..default()
                 },
@@ -106,6 +120,136 @@ fn setup_player(mut commands: Commands) {
                 },
             ));
         });
+}
+
+fn break_block(
+    mut commands: Commands,
+    spatial_query: SpatialQuery,
+    level: Res<Level>,
+    mouse: Res<Input<MouseButton>>,
+    player: Query<(Entity, &GridCell<i32>), With<Player>>,
+    camera: Query<&GlobalTransform, With<PlayerCamera>>,
+    chunks: Query<(Entity, &ChunkPos)>,
+) {
+    let (player_entity, grid_cell) = player.single();
+    let global_transform = camera.single();
+
+    let Some(hit) = spatial_query.cast_ray(
+        global_transform.translation().as_dvec3(),
+        global_transform.forward().as_dvec3(),
+        5.0,
+        true,
+        SpatialQueryFilter::new().without_entities([player_entity]),
+    ) else {
+        return;
+    };
+
+    let (hit_pos, block) = if mouse.just_pressed(MouseButton::Left) {
+        let hit_pos = global_transform.translation()
+            + global_transform.forward() * (hit.time_of_impact + 0.01) as f32;
+        (hit_pos, None)
+    } else if mouse.just_pressed(MouseButton::Right) {
+        let hit_pos =
+            global_transform.translation() + global_transform.forward() * hit.time_of_impact as f32;
+        (hit_pos, Some(Block::Sand))
+    } else {
+        return;
+    };
+
+    let block_pos = BlockPos::new(
+        I64Vec3::new(grid_cell.x as i64, grid_cell.y as i64, grid_cell.z as i64)
+            * CHUNK_SIZE as i64
+            + hit_pos.floor().as_i64vec3(),
+    );
+
+    let chunk_pos = block_pos.chunk();
+    let Some(chunk) = level.chunks.get(&chunk_pos) else {
+        return;
+    };
+
+    let pos = block_pos.relative_to_chunk();
+    let mut chunk = chunk.write();
+    let block_mut = chunk.block_mut(pos.0, pos.1, pos.2);
+    if block.is_none() {
+        *block_mut = None;
+    } else if block_mut.is_none() {
+        *block_mut = block;
+    } else {
+        return;
+    }
+    drop(chunk);
+
+    for pos in [vec![chunk_pos], chunk_pos.adjacent_chunks().to_vec()]
+        .iter()
+        .flatten()
+    {
+        let Some((entity, _)) = chunks.iter().find(|c| c.1 == pos) else {
+            continue;
+        };
+
+        commands.entity(entity).insert(Dirty);
+    }
+}
+
+fn raycast_blocks(
+    level: &Level,
+    mut block_pos: BlockPos,
+    direction: Vec3,
+    max_distance: i32,
+) -> Result<BlockPos, BlockPos> {
+    // Determine the step direction (1 or -1) for x, y, z
+    let step_x = if direction.x >= 0.0 {
+        BlockPos::RIGHT
+    } else {
+        BlockPos::LEFT
+    };
+    let step_y = if direction.y >= 0.0 {
+        BlockPos::TOP
+    } else {
+        BlockPos::BOTTOM
+    };
+    let step_z = if direction.z >= 0.0 {
+        BlockPos::FRONT
+    } else {
+        BlockPos::BACK
+    };
+
+    // How far along the ray must we move for each component
+    // to cross a block boundary?
+    let delta_x = (1.0 / direction.x).abs();
+    let delta_y = (1.0 / direction.y).abs();
+    let delta_z = (1.0 / direction.z).abs();
+
+    // Initial values
+    let mut t_next_x = delta_x;
+    let mut t_next_y = delta_y;
+    let mut t_next_z = delta_z;
+
+    // Traverse the grid up to max_distance
+    for _ in 0..max_distance {
+        // Check for a block at the current position
+        let (x, y, z) = block_pos.relative_to_chunk();
+        if let Some(chunk) = level.chunks.get(&block_pos.chunk()) {
+            if chunk.read().block(x, y, z).is_some() {
+                return Ok(block_pos);
+            }
+        };
+
+        // Move ray to the next nearest block boundary in x, y, or z
+        if t_next_x < t_next_y && t_next_x < t_next_z {
+            block_pos += step_x;
+            t_next_x += delta_x;
+        } else if t_next_y < t_next_z {
+            block_pos += step_y;
+            t_next_y += delta_y;
+        } else {
+            block_pos += step_z;
+            t_next_z += delta_z;
+        }
+    }
+
+    // Ray didn't hit any block within max_distance
+    Err(block_pos)
 }
 
 fn setup_input(mut window: Query<&mut Window, With<PrimaryWindow>>) {
@@ -198,7 +342,7 @@ fn player_move(
 
     let on_ground = shape_hits
         .iter()
-        .any(|hit| rotation.rotate(-hit.normal2).angle_between(DVec3::Y).abs() <= PI * 0.45);
+        .any(|hit| rotation.rotate(-hit.normal2).angle_between(DVec3::Y).abs() <= PI_64 * 0.45);
 
     if keyboard.pressed(KeyCode::Space) && on_ground {
         velocity.y = 8.0;

@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use bevy::{math::ivec3, prelude::*, utils::HashSet};
+use bevy::{math::ivec3, prelude::*};
 use bevy_xpbd_3d::components::Collider;
 use derive_more::{Add, AddAssign};
+use indexmap::IndexSet;
 use itertools::Itertools;
 use num_traits::{FromPrimitive, ToPrimitive};
 use parking_lot::RwLock;
@@ -36,7 +37,7 @@ impl ChunkPos {
         Self(pos)
     }
 
-    pub fn chunks_within_radius(self, chunk_radius: i32) -> HashSet<ChunkPos> {
+    pub fn chunks_within_radius(self, chunk_radius: i32) -> IndexSet<ChunkPos> {
         let radius_squared = chunk_radius * chunk_radius;
         let range = -chunk_radius..=chunk_radius;
 
