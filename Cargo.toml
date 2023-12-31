@@ -24,11 +24,10 @@ default-features = false
 features = ["3d", "f64", "collider-from-mesh"]
 
 [dependencies.big_space]
-git = "https://github.com/austincummings/big_space"
-branch = "xpbd-compat"
+path = "../bigspace"
 
 [patch.crates-io]
-bevy_xpbd_3d = { git = "https://github.com/Jondolf/bevy_xpbd" }
+bevy_xpbd_3d = { path = "../xpbd/crates/bevy_xpbd_3d" }
 
 [profile.dev]
 opt-level = 1

@@ -11,10 +11,9 @@ use crate::{
 };
 
 pub struct LevelGenerator {
-    surface_level: f64,
+    sea_level: f64,
     scale_factor: f64,
-    height_map: NoiseMap,
-    density_map: NoiseMap,
+    elevation: NoiseMap,
 }
 
 impl LevelGenerator {
@@ -22,18 +21,11 @@ impl LevelGenerator {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
 
         Self {
-            surface_level: 400.0,
+            sea_level: 60.0,
             scale_factor: 250.0,
-            height_map: NoiseMap {
+            elevation: NoiseMap {
                 perlin: Perlin::new(rng.gen()),
                 octaves: 4,
-                amplitude: 15.0,
-                frequency: 2.0,
-                ..default()
-            },
-            density_map: NoiseMap {
-                perlin: Perlin::new(rng.gen()),
-                octaves: 2,
                 amplitude: 15.0,
                 frequency: 2.0,
                 ..default()
@@ -64,13 +56,12 @@ impl LevelGenerator {
     }
 
     fn generate_block(&self, pos: I64Vec3) -> Option<Block> {
-        let density = self.density_map.value_3d(
+        let elevation = self.elevation.value_2d(
             pos.x as f64 / self.scale_factor,
-            pos.y as f64 / self.scale_factor,
             pos.z as f64 / self.scale_factor,
         );
 
-        if density > 0.96 {
+        if pos.y as f64 <= self.sea_level + elevation {
             Some(Block::Rock)
         } else {
             None

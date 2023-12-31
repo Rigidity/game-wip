@@ -30,23 +30,8 @@ impl Plugin for LevelPlugin {
             .add_systems(OnEnter(GameState::InGame), setup_material)
             .add_systems(
                 Update,
-                (
-                    update_chunks,
-                    build_meshes,
-                    fix_positions, /*remove_chunk*/
-                )
-                    .run_if(in_state(GameState::InGame)),
+                (update_chunks, build_meshes).run_if(in_state(GameState::InGame)),
             );
-    }
-}
-
-fn fix_positions(mut query: Query<(&ChunkPos, &mut GridCell<i32>)>) {
-    for (chunk_pos, mut grid_cell) in query.iter_mut() {
-        if chunk_pos.x != grid_cell.x || chunk_pos.y != grid_cell.y || chunk_pos.z != grid_cell.z {
-            grid_cell.x = chunk_pos.x;
-            grid_cell.y = chunk_pos.y;
-            grid_cell.z = chunk_pos.z;
-        }
     }
 }
 

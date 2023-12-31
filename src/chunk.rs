@@ -151,13 +151,14 @@ impl ChunkData {
         };
 
         if data.len() == 1 {
-            for _ in 0..chunk.blocks.len() {
+            for _ in 0..chunk.blocks.capacity() {
                 if data[0] == 0 {
                     chunk.blocks.push(None);
                 } else {
                     chunk.blocks.push(Some(Block::from_u8(data[0] - 1)?));
                 }
             }
+            pos += 1;
         }
 
         while pos + 2 < data.len() {

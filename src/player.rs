@@ -46,7 +46,7 @@ pub struct MovementSpeed(pub f32);
 
 impl Default for MovementSpeed {
     fn default() -> Self {
-        Self(100.0)
+        Self(110.0)
     }
 }
 
@@ -70,7 +70,7 @@ fn setup_player(mut commands: Commands) {
         .spawn((
             Player,
             SpatialBundle::default(),
-            GridCell::<i32>::new(0, 0, 0),
+            GridCell::<i32>::new(0, 3, 0),
             FloatingOrigin,
             RigidBody::Dynamic,
             LockedAxes::ROTATION_LOCKED,
