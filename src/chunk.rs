@@ -1,20 +1,15 @@
-use std::sync::Arc;
-
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::Collider;
 use itertools::Itertools;
-use parking_lot::RwLock;
 
 use crate::{
     block::{render_cube, BlockFaces},
     mesh_builder::MeshBuilder,
     voxel::{
-        chunk::{iter_blocks, CHUNK_SIZE},
+        chunk::{iter_blocks, Chunk, CHUNK_SIZE},
         chunk_data::ChunkData,
     },
 };
-
-pub type Chunk = Arc<RwLock<ChunkData>>;
 
 pub struct AdjacentChunks {
     pub left: Option<Chunk>,
