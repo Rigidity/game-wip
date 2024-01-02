@@ -1,12 +1,11 @@
 use bevy::prelude::*;
-use itertools::Itertools;
 use noise::{NoiseFn, Perlin};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
     block::Block,
-    voxel::{block_pos::BlockPos, chunk::CHUNK_SIZE, chunk_data::ChunkData, chunk_pos::ChunkPos},
+    voxel::{block_pos::BlockPos, chunk::iter_blocks, chunk_data::ChunkData, chunk_pos::ChunkPos},
 };
 
 pub struct LevelGenerator {
@@ -42,10 +41,7 @@ impl Default for LevelGenerator {
 impl LevelGenerator {
     pub fn generate_chunk(&self, pos: ChunkPos) -> ChunkData {
         let mut chunk = ChunkData::default();
-        for ((x, y), z) in (0..CHUNK_SIZE)
-            .cartesian_product(0..CHUNK_SIZE)
-            .cartesian_product(0..CHUNK_SIZE)
-        {
+        for (x, y, z) in iter_blocks() {
             let block_pos = pos.block_pos() + BlockPos::new(x as i64, y as i64, z as i64);
             let block = self.generate_block(block_pos);
             *chunk.block_mut(x, y, z) = block;

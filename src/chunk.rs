@@ -8,15 +8,11 @@ use parking_lot::RwLock;
 use crate::{
     block::{render_cube, BlockFaces},
     mesh_builder::MeshBuilder,
-    voxel::{chunk::CHUNK_SIZE, chunk_data::ChunkData},
+    voxel::{
+        chunk::{iter_blocks, CHUNK_SIZE},
+        chunk_data::ChunkData,
+    },
 };
-
-pub fn iter_blocks() -> impl Iterator<Item = (usize, usize, usize)> {
-    (0..CHUNK_SIZE)
-        .cartesian_product(0..CHUNK_SIZE)
-        .cartesian_product(0..CHUNK_SIZE)
-        .map(|((x, y), z)| (x, y, z))
-}
 
 pub type Chunk = Arc<RwLock<ChunkData>>;
 
@@ -155,10 +151,7 @@ pub async fn generate_mesh(chunk: Chunk, adjacent: AdjacentChunks) -> (Mesh, Opt
     let edges = adjacent.compute_edges();
     let chunk = chunk.read();
 
-    for ((x, y), z) in (0..CHUNK_SIZE)
-        .cartesian_product(0..CHUNK_SIZE)
-        .cartesian_product(0..CHUNK_SIZE)
-    {
+    for (x, y, z) in iter_blocks() {
         let Some(block) = chunk.block(x, y, z) else {
             continue;
         };
