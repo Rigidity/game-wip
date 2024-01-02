@@ -15,10 +15,11 @@ use parking_lot::{Mutex, RwLock};
 use rusqlite::Connection;
 
 use crate::{
-    chunk::{generate_mesh, AdjacentChunks, Chunk, ChunkData, ChunkPos, CHUNK_SIZE},
+    chunk::{generate_mesh, AdjacentChunks, Chunk, ChunkData, CHUNK_SIZE},
     chunk_material::ChunkMaterial,
     level_generator::LevelGenerator,
     player::{Player, RenderDistance},
+    voxel::chunk_pos::ChunkPos,
     GameAssets, GameState,
 };
 

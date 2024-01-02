@@ -16,6 +16,7 @@ mod level;
 mod level_generator;
 mod mesh_builder;
 mod player;
+mod voxel;
 
 use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;

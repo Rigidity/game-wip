@@ -9,8 +9,8 @@ use bevy_egui::{
 use big_space::{FloatingOriginSettings, GridCell};
 
 use crate::{
-    chunk::ChunkPos,
     player::{JumpHeight, MouseSensitivity, MovementSpeed, Player, RenderDistance},
+    voxel::chunk_pos::ChunkPos,
     GameState,
 };
 
