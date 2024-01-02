@@ -81,5 +81,9 @@ fn main() {
             color: Color::WHITE,
             brightness: 0.85,
         })
+        .insert_resource(PrepareConfig {
+            position_to_transform: false,
+            transform_to_position: true,
+        })
         .run();
 }

@@ -24,6 +24,7 @@ impl Plugin for PlayerPlugin {
         app.init_resource::<RenderDistance>()
             .init_resource::<InputState>()
             .init_resource::<MovementSpeed>()
+            .init_resource::<JumpHeight>()
             .init_resource::<MouseSensitivity>()
             .add_systems(Startup, (setup_player, setup_input))
             .add_systems(
@@ -64,6 +65,15 @@ impl Default for MovementSpeed {
 }
 
 #[derive(Resource)]
+pub struct JumpHeight(pub f64);
+
+impl Default for JumpHeight {
+    fn default() -> Self {
+        Self(8.0)
+    }
+}
+
+#[derive(Resource)]
 pub struct MouseSensitivity(pub f32);
 
 impl Default for MouseSensitivity {
@@ -83,7 +93,7 @@ fn setup_player(mut commands: Commands) {
         .spawn((
             Player,
             SpatialBundle::default(),
-            GridCell::<i32>::new(0, 3, 0),
+            GridCell::<i32>::new(0, 6, 0),
             FloatingOrigin,
             RigidBody::Dynamic,
             LockedAxes::ROTATION_LOCKED,
@@ -111,7 +121,7 @@ fn setup_player(mut commands: Commands) {
                         fov: PI_32 / 180.0 * 60.0,
                         ..default()
                     }),
-                    transform: Transform::from_xyz(0.0, 1.25, 0.0),
+                    transform: Transform::from_xyz(0.0, 0.7, 0.0),
                     ..default()
                 },
                 FogSettings {
@@ -149,8 +159,8 @@ fn break_block(
             + global_transform.forward() * (hit.time_of_impact + 0.01) as f32;
         (hit_pos, None)
     } else if mouse.just_pressed(MouseButton::Right) {
-        let hit_pos =
-            global_transform.translation() + global_transform.forward() * hit.time_of_impact as f32;
+        let hit_pos = global_transform.translation()
+            + global_transform.forward() * (hit.time_of_impact - 0.01) as f32;
         (hit_pos, Some(Block::Sand))
     } else {
         return;
@@ -309,6 +319,7 @@ fn player_move(
     time: Res<Time>,
     keyboard: Res<Input<KeyCode>>,
     movement_speed: Res<MovementSpeed>,
+    jump_height: Res<JumpHeight>,
     camera: Query<&Transform, With<PlayerCamera>>,
     mut player: Query<(&mut LinearVelocity, &ShapeHits, &Rotation), With<Player>>,
 ) {
@@ -345,7 +356,7 @@ fn player_move(
         .any(|hit| rotation.rotate(-hit.normal2).angle_between(DVec3::Y).abs() <= PI_64 * 0.45);
 
     if keyboard.pressed(KeyCode::Space) && on_ground {
-        velocity.y = 8.0;
+        velocity.y = jump_height.0;
     }
 }
 

@@ -61,7 +61,7 @@ impl LevelGenerator {
             pos.z as f64 / self.scale_factor,
         );
 
-        if pos.y as f64 <= self.sea_level + elevation - 3.0 {
+        if pos.y as f64 <= self.sea_level + elevation - 1.0 {
             Some(Block::Dirt)
         } else if pos.y as f64 <= self.sea_level + elevation {
             Some(Block::Grass)
