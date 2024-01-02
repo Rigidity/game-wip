@@ -24,11 +24,11 @@ use big_space::{
     bevy_xpbd::floating_origin_sync::FloatingOriginSyncPlugin, FloatingOriginPlugin,
     FloatingOriginSettings,
 };
-use chunk::CHUNK_SIZE;
 use chunk_material::ChunkMaterial;
 use egui_menu::EguiMenuPlugin;
 use level::LevelPlugin;
 use player::PlayerPlugin;
+use voxel::chunk::CHUNK_SIZE;
 
 #[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GameState {

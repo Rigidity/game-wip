@@ -5,9 +5,7 @@ use big_space::GridCell;
 use indexmap::IndexSet;
 use itertools::Itertools;
 
-use crate::chunk::CHUNK_SIZE;
-
-use super::block_pos::BlockPos;
+use super::{block_pos::BlockPos, chunk::CHUNK_SIZE};
 
 #[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct ChunkPos {

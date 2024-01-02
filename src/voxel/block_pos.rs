@@ -3,9 +3,7 @@ use std::ops;
 use bevy::prelude::*;
 use num_integer::div_floor;
 
-use crate::chunk::CHUNK_SIZE;
-
-use super::chunk_pos::ChunkPos;
+use super::{chunk::CHUNK_SIZE, chunk_pos::ChunkPos};
 
 #[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct BlockPos {

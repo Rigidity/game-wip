@@ -6,8 +6,7 @@ use rand_chacha::ChaCha8Rng;
 
 use crate::{
     block::Block,
-    chunk::{ChunkData, CHUNK_SIZE},
-    voxel::{block_pos::BlockPos, chunk_pos::ChunkPos},
+    voxel::{block_pos::BlockPos, chunk::CHUNK_SIZE, chunk_data::ChunkData, chunk_pos::ChunkPos},
 };
 
 pub struct LevelGenerator {

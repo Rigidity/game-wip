@@ -15,11 +15,11 @@ use parking_lot::{Mutex, RwLock};
 use rusqlite::Connection;
 
 use crate::{
-    chunk::{generate_mesh, AdjacentChunks, Chunk, ChunkData, CHUNK_SIZE},
+    chunk::{generate_mesh, AdjacentChunks, Chunk},
     chunk_material::ChunkMaterial,
     level_generator::LevelGenerator,
     player::{Player, RenderDistance},
-    voxel::chunk_pos::ChunkPos,
+    voxel::{chunk::CHUNK_SIZE, chunk_data::ChunkData, chunk_pos::ChunkPos},
     GameAssets, GameState,
 };
 
@@ -33,31 +33,6 @@ impl Plugin for LevelPlugin {
                 Update,
                 (update_chunks, build_meshes).run_if(in_state(GameState::InGame)),
             );
-    }
-}
-
-fn remove_chunk(
-    mut commands: Commands,
-    level: Res<Level>,
-    player: Query<&GridCell<i32>, With<Player>>,
-    chunks: Query<(&ChunkPos, Entity)>,
-) {
-    let &grid_cell = player.single();
-    let chunk_pos = ChunkPos::new(grid_cell.x, grid_cell.y - 1, grid_cell.z);
-    let Some(chunk) = level.chunks.get(&chunk_pos) else {
-        return;
-    };
-    for block in chunk.write().blocks.iter_mut() {
-        *block = None;
-    }
-    let entity = chunks.iter().find(|chunk| *chunk.0 == chunk_pos).unwrap().1;
-    commands.entity(entity).insert(Dirty);
-
-    for pos in chunk_pos.adjacent() {
-        if level.chunks.contains_key(&pos) {
-            let entity = chunks.iter().find(|chunk| *chunk.0 == pos).unwrap().1;
-            commands.entity(entity).insert(Dirty);
-        }
     }
 }
 

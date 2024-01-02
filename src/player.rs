@@ -12,9 +12,8 @@ use big_space::{FloatingOrigin, GridCell};
 
 use crate::{
     block::Block,
-    chunk::CHUNK_SIZE,
     level::{Dirty, Level},
-    voxel::{block_pos::BlockPos, chunk_pos::ChunkPos},
+    voxel::{block_pos::BlockPos, chunk::CHUNK_SIZE, chunk_pos::ChunkPos},
     GameState,
 };
 
