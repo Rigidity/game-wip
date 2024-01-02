@@ -19,12 +19,13 @@ use crate::{
     chunk_material::ChunkMaterial,
     level_generator::LevelGenerator,
     player::{Player, RenderDistance},
+    plugins::asset_loader::BlockArray,
     voxel::{
         chunk::{Chunk, CHUNK_SIZE},
         chunk_data::ChunkData,
         chunk_pos::ChunkPos,
     },
-    GameAssets, GameState,
+    GameState,
 };
 
 pub struct LevelPlugin;
@@ -111,22 +112,16 @@ fn setup_level(mut commands: Commands) {
 
 fn setup_material(
     mut commands: Commands,
-    game_assets: Res<GameAssets>,
-    mut images: ResMut<Assets<Image>>,
+    block_array: Res<BlockArray>,
     mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, ChunkMaterial>>>,
 ) {
-    let image_handle = game_assets.block_textures.clone();
-    let image = images.get_mut(&image_handle).unwrap();
-
-    image.reinterpret_stacked_2d_as_array(5);
-
     let material_handle = materials.add(ExtendedMaterial {
         base: StandardMaterial {
             perceptual_roughness: 1.0,
             ..default()
         },
         extension: ChunkMaterial {
-            texture: image_handle,
+            texture: block_array.clone(),
         },
     });
 

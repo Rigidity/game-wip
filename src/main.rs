@@ -6,7 +6,6 @@ use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,
     window::WindowResolution,
 };
-use bevy_asset_loader::prelude::*;
 
 mod block;
 mod chunk;
@@ -16,6 +15,7 @@ mod level;
 mod level_generator;
 mod mesh_builder;
 mod player;
+mod plugins;
 mod voxel;
 
 use bevy_egui::EguiPlugin;
@@ -28,6 +28,7 @@ use chunk_material::ChunkMaterial;
 use egui_menu::EguiMenuPlugin;
 use level::LevelPlugin;
 use player::PlayerPlugin;
+use plugins::asset_loader::AssetLoaderPlugin;
 use voxel::chunk::CHUNK_SIZE;
 
 #[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,12 +36,6 @@ pub enum GameState {
     #[default]
     LoadingAssets,
     InGame,
-}
-
-#[derive(AssetCollection, Resource)]
-pub struct GameAssets {
-    #[asset(path = "blocks.png")]
-    pub block_textures: Handle<Image>,
 }
 
 fn main() {
@@ -65,16 +60,13 @@ fn main() {
             FloatingOriginPlugin::<i32>::default(),
             PhysicsPlugins::default().build().disable::<SyncPlugin>(),
             FloatingOriginSyncPlugin::<i32>::default(),
+            AssetLoaderPlugin,
             EguiPlugin,
             LevelPlugin,
             PlayerPlugin,
             EguiMenuPlugin,
         ))
         .add_state::<GameState>()
-        .add_loading_state(
-            LoadingState::new(GameState::LoadingAssets).continue_to_state(GameState::InGame),
-        )
-        .add_collection_to_loading_state::<_, GameAssets>(GameState::LoadingAssets)
         .insert_resource(FloatingOriginSettings::new(CHUNK_SIZE as f32, 0.0))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.5, 0.8)))
         .insert_resource(Gravity(DVec3::NEG_Y * 26.0))
