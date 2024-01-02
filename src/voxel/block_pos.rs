@@ -1,43 +1,68 @@
-use bevy::{math::I64Vec3, prelude::*};
-use derive_more::{Add, AddAssign};
+use std::ops;
+
+use bevy::prelude::*;
 use num_integer::div_floor;
 
 use crate::chunk::CHUNK_SIZE;
 
 use super::chunk_pos::ChunkPos;
 
-#[derive(Component, Debug, Clone, Copy, Hash, Deref, PartialEq, Eq, Add, AddAssign)]
-pub struct BlockPos(I64Vec3);
+#[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct BlockPos {
+    pub x: i64,
+    pub y: i64,
+    pub z: i64,
+}
 
 impl BlockPos {
-    pub const RIGHT: BlockPos = BlockPos(I64Vec3::X);
-    pub const TOP: BlockPos = BlockPos(I64Vec3::Y);
-    pub const FRONT: BlockPos = BlockPos(I64Vec3::Z);
-    pub const LEFT: BlockPos = BlockPos(I64Vec3::NEG_X);
-    pub const BOTTOM: BlockPos = BlockPos(I64Vec3::NEG_Y);
-    pub const BACK: BlockPos = BlockPos(I64Vec3::NEG_Z);
+    pub const X: Self = Self::new(1, 0, 0);
+    pub const Y: Self = Self::new(0, 1, 0);
+    pub const Z: Self = Self::new(0, 0, 1);
+    pub const NEG_X: Self = Self::new(-1, 0, 0);
+    pub const NEG_Y: Self = Self::new(0, -1, 0);
+    pub const NEG_Z: Self = Self::new(0, 0, -1);
 
-    pub fn new(pos: I64Vec3) -> Self {
-        Self(pos)
+    pub const fn new(x: i64, y: i64, z: i64) -> Self {
+        Self { x, y, z }
     }
 
-    pub fn chunk(self) -> ChunkPos {
-        ChunkPos::new(IVec3::new(
+    pub fn chunk_pos(self) -> ChunkPos {
+        ChunkPos::new(
             div_floor(self.x, CHUNK_SIZE as i64) as i32,
             div_floor(self.y, CHUNK_SIZE as i64) as i32,
             div_floor(self.z, CHUNK_SIZE as i64) as i32,
-        ))
-    }
-
-    pub fn relative_to_chunk(self) -> (usize, usize, usize) {
-        (
-            self.0.x.rem_euclid(CHUNK_SIZE as i64) as usize,
-            self.0.y.rem_euclid(CHUNK_SIZE as i64) as usize,
-            self.0.z.rem_euclid(CHUNK_SIZE as i64) as usize,
         )
     }
 
-    pub fn into_inner(self) -> I64Vec3 {
-        self.0
+    pub fn relative_pos(self) -> (usize, usize, usize) {
+        (
+            self.x.rem_euclid(CHUNK_SIZE as i64) as usize,
+            self.y.rem_euclid(CHUNK_SIZE as i64) as usize,
+            self.z.rem_euclid(CHUNK_SIZE as i64) as usize,
+        )
+    }
+}
+
+impl ops::Add for BlockPos {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl ops::AddAssign for BlockPos {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
+
+impl ops::Sub for BlockPos {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
     }
 }

@@ -43,7 +43,7 @@ fn remove_chunk(
     chunks: Query<(&ChunkPos, Entity)>,
 ) {
     let &grid_cell = player.single();
-    let chunk_pos = ChunkPos::new(IVec3::new(grid_cell.x, grid_cell.y - 1, grid_cell.z));
+    let chunk_pos = ChunkPos::new(grid_cell.x, grid_cell.y - 1, grid_cell.z);
     let Some(chunk) = level.chunks.get(&chunk_pos) else {
         return;
     };
@@ -53,7 +53,7 @@ fn remove_chunk(
     let entity = chunks.iter().find(|chunk| *chunk.0 == chunk_pos).unwrap().1;
     commands.entity(entity).insert(Dirty);
 
-    for pos in chunk_pos.adjacent_chunks() {
+    for pos in chunk_pos.adjacent() {
         if level.chunks.contains_key(&pos) {
             let entity = chunks.iter().find(|chunk| *chunk.0 == pos).unwrap().1;
             commands.entity(entity).insert(Dirty);
@@ -166,11 +166,11 @@ fn update_chunks(
 
     let translation = (transform.translation / CHUNK_SIZE as f32).round();
 
-    let center = ChunkPos::new(IVec3::new(
+    let center = ChunkPos::new(
         grid_cell.x + translation.x as i32,
         grid_cell.y + translation.y as i32,
         grid_cell.z + translation.z as i32,
-    ));
+    );
 
     let visible_chunks = center.chunks_within_radius(render_distance.0);
 
@@ -213,7 +213,7 @@ fn update_chunks(
     // Regenerate chunks
     for pos in inserted_chunks
         .iter()
-        .flat_map(|pos| pos.adjacent_chunks())
+        .flat_map(|pos| pos.adjacent())
         .unique()
     {
         let Some(&entity) = chunk_entities.get(&pos) else {

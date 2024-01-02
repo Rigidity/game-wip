@@ -1,21 +1,40 @@
+use std::ops;
+
 use bevy::prelude::*;
-use derive_more::{Add, AddAssign};
+use big_space::GridCell;
 use indexmap::IndexSet;
 use itertools::Itertools;
 
-#[derive(Component, Debug, Clone, Copy, Hash, Deref, PartialEq, Eq, Add, AddAssign)]
-pub struct ChunkPos(IVec3);
+use crate::chunk::CHUNK_SIZE;
+
+use super::block_pos::BlockPos;
+
+#[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct ChunkPos {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
 
 impl ChunkPos {
-    pub const RIGHT: ChunkPos = ChunkPos(IVec3::X);
-    pub const TOP: ChunkPos = ChunkPos(IVec3::Y);
-    pub const FRONT: ChunkPos = ChunkPos(IVec3::Z);
-    pub const LEFT: ChunkPos = ChunkPos(IVec3::NEG_X);
-    pub const BOTTOM: ChunkPos = ChunkPos(IVec3::NEG_Y);
-    pub const BACK: ChunkPos = ChunkPos(IVec3::NEG_Z);
+    pub const X: Self = Self::new(1, 0, 0);
+    pub const Y: Self = Self::new(0, 1, 0);
+    pub const Z: Self = Self::new(0, 0, 1);
+    pub const NEG_X: Self = Self::new(-1, 0, 0);
+    pub const NEG_Y: Self = Self::new(0, -1, 0);
+    pub const NEG_Z: Self = Self::new(0, 0, -1);
 
-    pub fn new(pos: IVec3) -> Self {
-        Self(pos)
+    pub const fn new(x: i32, y: i32, z: i32) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn block_pos(self) -> BlockPos {
+        let scale = CHUNK_SIZE as i64;
+        BlockPos::new(
+            self.x as i64 * scale,
+            self.y as i64 * scale,
+            self.z as i64 * scale,
+        )
     }
 
     pub fn chunks_within_radius(self, chunk_radius: i32) -> IndexSet<ChunkPos> {
@@ -26,40 +45,42 @@ impl ChunkPos {
             .clone()
             .cartesian_product(range.clone())
             .cartesian_product(range)
-            .map(|((x, y), z)| self + ChunkPos::new(IVec3::new(x, y, z)))
-            .filter(|pos| self.0.distance_squared(pos.0) <= radius_squared)
-            .sorted_by(|a, b| {
-                a.0.distance_squared(self.0)
-                    .cmp(&b.0.distance_squared(self.0))
-            })
+            .map(|((x, y), z)| self + ChunkPos::new(x, y, z))
+            .filter(|pos| self.distance_squared(*pos) <= radius_squared)
+            .sorted_by(|a, b| a.distance_squared(self).cmp(&b.distance_squared(self)))
             .collect()
     }
 
+    fn distance_squared(self, other: Self) -> i32 {
+        let diff = self - other;
+        (diff.x * diff.x) + (diff.y * diff.y) + (diff.z * diff.z)
+    }
+
     pub fn left(self) -> ChunkPos {
-        self + ChunkPos::LEFT
+        self + ChunkPos::NEG_X
     }
 
     pub fn right(self) -> ChunkPos {
-        self + ChunkPos::RIGHT
+        self + ChunkPos::X
     }
 
     pub fn top(self) -> ChunkPos {
-        self + ChunkPos::TOP
+        self + ChunkPos::Y
     }
 
     pub fn bottom(self) -> ChunkPos {
-        self + ChunkPos::BOTTOM
+        self + ChunkPos::NEG_Y
     }
 
     pub fn front(self) -> ChunkPos {
-        self + ChunkPos::FRONT
+        self + ChunkPos::Z
     }
 
     pub fn back(self) -> ChunkPos {
-        self + ChunkPos::BACK
+        self + ChunkPos::NEG_Z
     }
 
-    pub fn adjacent_chunks(self) -> [ChunkPos; 6] {
+    pub fn adjacent(self) -> [ChunkPos; 6] {
         [
             self.left(),
             self.right(),
@@ -69,8 +90,32 @@ impl ChunkPos {
             self.back(),
         ]
     }
+}
 
-    pub fn into_inner(self) -> IVec3 {
-        self.0
+impl From<GridCell<i32>> for ChunkPos {
+    fn from(value: GridCell<i32>) -> Self {
+        Self::new(value.x, value.y, value.z)
+    }
+}
+
+impl From<ChunkPos> for GridCell<i32> {
+    fn from(value: ChunkPos) -> Self {
+        Self::new(value.x, value.y, value.z)
+    }
+}
+
+impl ops::Add for ChunkPos {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl ops::Sub for ChunkPos {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
     }
 }

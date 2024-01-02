@@ -3,7 +3,7 @@ use std::{f32::consts::PI as PI_32, f64::consts::PI as PI_64};
 use bevy::{
     ecs::event::ManualEventReader,
     input::mouse::MouseMotion,
-    math::{DQuat, DVec3, I64Vec3},
+    math::{DQuat, DVec3},
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
@@ -167,20 +167,19 @@ fn break_block(
         return;
     };
 
-    let block_pos = BlockPos::new(
-        I64Vec3::new(grid_cell.x as i64, grid_cell.y as i64, grid_cell.z as i64)
-            * CHUNK_SIZE as i64
-            + hit_pos.floor().as_i64vec3(),
-    );
+    let floor = hit_pos.floor().as_i64vec3();
+    let block_pos =
+        ChunkPos::from(*grid_cell).block_pos() + BlockPos::new(floor.x, floor.y, floor.z);
+    let chunk_pos = block_pos.chunk_pos();
 
-    let chunk_pos = block_pos.chunk();
     let Some(chunk) = level.chunks.get(&chunk_pos) else {
         return;
     };
 
-    let pos = block_pos.relative_to_chunk();
+    let pos = block_pos.relative_pos();
     let mut chunk = chunk.write();
     let block_mut = chunk.block_mut(pos.0, pos.1, pos.2);
+
     if block.is_none() {
         *block_mut = None;
     } else if block_mut.is_none() {
@@ -188,9 +187,10 @@ fn break_block(
     } else {
         return;
     }
+
     drop(chunk);
 
-    for pos in [vec![chunk_pos], chunk_pos.adjacent_chunks().to_vec()]
+    for pos in [vec![chunk_pos], chunk_pos.adjacent().to_vec()]
         .iter()
         .flatten()
     {
@@ -210,19 +210,19 @@ fn raycast_blocks(
 ) -> Result<BlockPos, BlockPos> {
     // Determine the step direction (1 or -1) for x, y, z
     let step_x = if direction.x >= 0.0 {
-        BlockPos::RIGHT
+        BlockPos::X
     } else {
-        BlockPos::LEFT
+        BlockPos::NEG_X
     };
     let step_y = if direction.y >= 0.0 {
-        BlockPos::TOP
+        BlockPos::Y
     } else {
-        BlockPos::BOTTOM
+        BlockPos::NEG_Y
     };
     let step_z = if direction.z >= 0.0 {
-        BlockPos::FRONT
+        BlockPos::Z
     } else {
-        BlockPos::BACK
+        BlockPos::NEG_Z
     };
 
     // How far along the ray must we move for each component
@@ -239,8 +239,8 @@ fn raycast_blocks(
     // Traverse the grid up to max_distance
     for _ in 0..max_distance {
         // Check for a block at the current position
-        let (x, y, z) = block_pos.relative_to_chunk();
-        if let Some(chunk) = level.chunks.get(&block_pos.chunk()) {
+        let (x, y, z) = block_pos.relative_pos();
+        if let Some(chunk) = level.chunks.get(&block_pos.chunk_pos()) {
             if chunk.read().block(x, y, z).is_some() {
                 return Ok(block_pos);
             }

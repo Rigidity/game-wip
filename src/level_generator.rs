@@ -1,4 +1,3 @@
-use bevy::math::I64Vec3;
 use bevy::prelude::*;
 use itertools::Itertools;
 use noise::{NoiseFn, Perlin};
@@ -8,7 +7,7 @@ use rand_chacha::ChaCha8Rng;
 use crate::{
     block::Block,
     chunk::{ChunkData, CHUNK_SIZE},
-    voxel::chunk_pos::ChunkPos,
+    voxel::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
 pub struct LevelGenerator {
@@ -48,15 +47,14 @@ impl LevelGenerator {
             .cartesian_product(0..CHUNK_SIZE)
             .cartesian_product(0..CHUNK_SIZE)
         {
-            let block_pos = pos.into_inner().as_i64vec3() * CHUNK_SIZE as i64
-                + I64Vec3::new(x as i64, y as i64, z as i64);
+            let block_pos = pos.block_pos() + BlockPos::new(x as i64, y as i64, z as i64);
             let block = self.generate_block(block_pos);
             *chunk.block_mut(x, y, z) = block;
         }
         chunk
     }
 
-    fn generate_block(&self, pos: I64Vec3) -> Option<Block> {
+    fn generate_block(&self, pos: BlockPos) -> Option<Block> {
         let elevation = self.elevation.value_2d(
             pos.x as f64 / self.scale_factor,
             pos.z as f64 / self.scale_factor,
