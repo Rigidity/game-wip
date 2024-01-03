@@ -36,7 +36,9 @@ impl Plugin for LevelPlugin {
             .add_systems(OnEnter(GameState::InGame), setup_material)
             .add_systems(
                 Update,
-                (update_chunks, build_meshes).run_if(in_state(GameState::InGame)),
+                (update_chunks, apply_deferred, build_meshes)
+                    .chain()
+                    .run_if(in_state(GameState::InGame)),
             );
     }
 }

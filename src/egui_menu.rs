@@ -38,7 +38,7 @@ fn render_ui(
 
     Window::new("Debug").show(contexts.ctx_mut(), |ui| {
         ui.add(Slider::new(&mut render_distance.0, 4..=24).text("Render Distance"));
-        ui.add(Slider::new(&mut movement_speed.0, 10.0..=2000.0).text("Movement Speed"));
+        ui.add(Slider::new(&mut movement_speed.0, 0.0..=50.0).text("Movement Speed"));
         ui.add(Slider::new(&mut jump_height.0, 0.0..=100.0).text("Jump height"));
         ui.add(Slider::new(&mut mouse_sensitivity.0, 0.00001..=0.0002).text("Mouse Sensitivity"));
         ui.add(Slider::new(&mut reach.0, 0.0..=100.0).text("Reach"));

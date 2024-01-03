@@ -30,14 +30,11 @@ impl Plugin for PlayerPlugin {
             .add_systems(Startup, (setup_player, setup_input))
             .add_systems(
                 Update,
-                (
-                    player_look,
-                    player_move,
-                    break_block,
-                    toggle_grab_cursor,
-                    update_fog,
-                )
-                    .run_if(in_state(GameState::InGame)),
+                (break_block, toggle_grab_cursor, update_fog).run_if(in_state(GameState::InGame)),
+            )
+            .add_systems(
+                FixedUpdate,
+                (player_look, player_move).run_if(in_state(GameState::InGame)),
             );
     }
 }
@@ -61,7 +58,7 @@ pub struct MovementSpeed(pub f32);
 
 impl Default for MovementSpeed {
     fn default() -> Self {
-        Self(110.0)
+        Self(1.5)
     }
 }
 
@@ -327,7 +324,6 @@ fn player_look(
 }
 
 fn player_move(
-    time: Res<Time>,
     keyboard: Res<Input<KeyCode>>,
     movement_speed: Res<MovementSpeed>,
     jump_height: Res<JumpHeight>,
@@ -356,11 +352,10 @@ fn player_move(
     apply!(+= right if KeyCode::D);
     apply!(-= right if KeyCode::A);
 
-    velocity.0 +=
-        (movement.normalize_or_zero() * time.delta_seconds() * movement_speed.0).as_dvec3();
+    velocity.0 += (movement.normalize_or_zero() * movement_speed.0).as_dvec3();
 
-    velocity.0.x *= (1.0 - time.delta_seconds() * 10.0).max(0.0) as f64;
-    velocity.0.z *= (1.0 - time.delta_seconds() * 10.0).max(0.0) as f64;
+    velocity.0.x *= 0.87;
+    velocity.0.z *= 0.87;
 
     let on_ground = shape_hits
         .iter()

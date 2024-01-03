@@ -13,7 +13,7 @@ use crate::{
 
 pub struct LevelGenerator {
     sea_level: f64,
-    scale_factor: f64,
+    temperature: Perlin,
     elevation: NoiseMap,
 }
 
@@ -23,7 +23,7 @@ impl LevelGenerator {
 
         Self {
             sea_level: 60.0,
-            scale_factor: 250.0,
+            temperature: Perlin::new(rng.gen()),
             elevation: NoiseMap {
                 perlin: Perlin::new(rng.gen()),
                 octaves: 4,
@@ -53,12 +53,21 @@ impl LevelGenerator {
     }
 
     fn generate_block(&self, pos: BlockPos) -> Option<Block> {
-        let elevation = self.elevation.value_2d(
-            pos.x as f64 / self.scale_factor,
-            pos.z as f64 / self.scale_factor,
-        );
+        let temperature = self
+            .temperature
+            .get([pos.x as f64 / 1000.0, pos.z as f64 / 1000.0]);
 
-        if pos.y as f64 <= self.sea_level + elevation - 1.0 {
+        let elevation = self
+            .elevation
+            .value_2d(pos.x as f64 / 250.0, pos.z as f64 / 250.0);
+
+        if temperature > 0.4 {
+            if pos.y as f64 <= self.sea_level + elevation {
+                Some(Block::Sand)
+            } else {
+                None
+            }
+        } else if pos.y as f64 <= self.sea_level + elevation - 1.0 {
             Some(Block::Dirt)
         } else if pos.y as f64 <= self.sea_level + elevation {
             Some(Block::Grass)
