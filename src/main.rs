@@ -2,6 +2,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+use std::time::Duration;
+
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,
     window::WindowResolution,
@@ -72,11 +74,16 @@ fn main() {
         .insert_resource(Gravity(DVec3::NEG_Y * 26.0))
         .insert_resource(AmbientLight {
             color: Color::WHITE,
-            brightness: 0.85,
+            brightness: 1.0,
         })
         .insert_resource(PrepareConfig {
             position_to_transform: false,
             transform_to_position: true,
         })
+        .insert_resource(Time::<Physics>::from_timestep(TimestepMode::Fixed {
+            delta: Duration::from_secs_f32(1.0 / 60.0),
+            max_delta_overstep: Duration::from_secs_f32(1.0),
+            overstep: Duration::from_secs_f32(0.0),
+        }))
         .run();
 }

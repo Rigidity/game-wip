@@ -2,7 +2,7 @@ use num_traits::{FromPrimitive, ToPrimitive};
 
 use crate::block::Block;
 
-use super::chunk::CHUNK_SIZE;
+use super::{chunk::CHUNK_SIZE, chunk_index::ChunkIndex};
 
 #[derive(Clone)]
 pub struct ChunkData {
@@ -10,12 +10,12 @@ pub struct ChunkData {
 }
 
 impl ChunkData {
-    pub fn block(&self, x: usize, y: usize, z: usize) -> Option<Block> {
-        self.blocks[Self::index(x, y, z)]
+    pub fn block(&self, index: ChunkIndex) -> Option<Block> {
+        self.blocks[index.as_usize()]
     }
 
-    pub fn block_mut(&mut self, x: usize, y: usize, z: usize) -> &mut Option<Block> {
-        &mut self.blocks[Self::index(x, y, z)]
+    pub fn block_mut(&mut self, index: ChunkIndex) -> &mut Option<Block> {
+        &mut self.blocks[index.as_usize()]
     }
 
     pub fn serialize(&self) -> Vec<u8> {
@@ -91,10 +91,6 @@ impl ChunkData {
         } else {
             None
         }
-    }
-
-    fn index(x: usize, y: usize, z: usize) -> usize {
-        x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE
     }
 }
 

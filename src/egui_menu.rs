@@ -9,7 +9,7 @@ use bevy_egui::{
 use big_space::{FloatingOriginSettings, GridCell};
 
 use crate::{
-    player::{JumpHeight, MouseSensitivity, MovementSpeed, Player, RenderDistance},
+    player::{JumpHeight, MouseSensitivity, MovementSpeed, Player, Reach, RenderDistance},
     voxel::chunk_pos::ChunkPos,
     GameState,
 };
@@ -29,6 +29,7 @@ fn render_ui(
     mut movement_speed: ResMut<MovementSpeed>,
     mut jump_height: ResMut<JumpHeight>,
     mut mouse_sensitivity: ResMut<MouseSensitivity>,
+    mut reach: ResMut<Reach>,
     mut contexts: EguiContexts,
     player: Query<(&GridCell<i32>, &Transform, &GlobalTransform), With<Player>>,
     chunks: Query<&ChunkPos>,
@@ -37,9 +38,10 @@ fn render_ui(
 
     Window::new("Debug").show(contexts.ctx_mut(), |ui| {
         ui.add(Slider::new(&mut render_distance.0, 4..=24).text("Render Distance"));
-        ui.add(Slider::new(&mut movement_speed.0, 10.0..=1000.0).text("Movement Speed"));
+        ui.add(Slider::new(&mut movement_speed.0, 10.0..=2000.0).text("Movement Speed"));
         ui.add(Slider::new(&mut jump_height.0, 0.0..=100.0).text("Jump height"));
         ui.add(Slider::new(&mut mouse_sensitivity.0, 0.00001..=0.0002).text("Mouse Sensitivity"));
+        ui.add(Slider::new(&mut reach.0, 0.0..=100.0).text("Reach"));
 
         ui.label(format!(
             "Chunk: X {}, Y {}, Z {}",

@@ -8,6 +8,7 @@ use crate::{
     voxel::{
         chunk::{iter_blocks, Chunk, CHUNK_SIZE},
         chunk_data::ChunkData,
+        chunk_index::ChunkIndex,
     },
 };
 
@@ -29,7 +30,10 @@ impl AdjacentChunks {
                 let mut values = [true; CHUNK_SIZE * CHUNK_SIZE];
                 if let Some(left) = self.left {
                     for (y, z) in positions.clone() {
-                        let is_block = left.read().block(CHUNK_SIZE - 1, y, z).is_some();
+                        let is_block = left
+                            .read()
+                            .block(ChunkIndex::new(CHUNK_SIZE - 1, y, z))
+                            .is_some();
                         values[AdjacentEdges::index(y, z)] = is_block;
                     }
                 }
@@ -39,7 +43,7 @@ impl AdjacentChunks {
                 let mut values = [true; CHUNK_SIZE * CHUNK_SIZE];
                 if let Some(right) = self.right {
                     for (y, z) in positions.clone() {
-                        let is_block = right.read().block(0, y, z).is_some();
+                        let is_block = right.read().block(ChunkIndex::new(0, y, z)).is_some();
                         values[AdjacentEdges::index(y, z)] = is_block;
                     }
                 }
@@ -49,7 +53,7 @@ impl AdjacentChunks {
                 let mut values = [true; CHUNK_SIZE * CHUNK_SIZE];
                 if let Some(top) = self.top {
                     for (x, z) in positions.clone() {
-                        let is_block = top.read().block(x, 0, z).is_some();
+                        let is_block = top.read().block(ChunkIndex::new(x, 0, z)).is_some();
                         values[AdjacentEdges::index(x, z)] = is_block;
                     }
                 }
@@ -59,7 +63,10 @@ impl AdjacentChunks {
                 let mut values = [true; CHUNK_SIZE * CHUNK_SIZE];
                 if let Some(bottom) = self.bottom {
                     for (x, z) in positions.clone() {
-                        let is_block = bottom.read().block(x, CHUNK_SIZE - 1, z).is_some();
+                        let is_block = bottom
+                            .read()
+                            .block(ChunkIndex::new(x, CHUNK_SIZE - 1, z))
+                            .is_some();
                         values[AdjacentEdges::index(x, z)] = is_block;
                     }
                 }
@@ -69,7 +76,7 @@ impl AdjacentChunks {
                 let mut values = [true; CHUNK_SIZE * CHUNK_SIZE];
                 if let Some(front) = self.front {
                     for (x, y) in positions.clone() {
-                        let is_block = front.read().block(x, y, 0).is_some();
+                        let is_block = front.read().block(ChunkIndex::new(x, y, 0)).is_some();
                         values[AdjacentEdges::index(x, y)] = is_block;
                     }
                 }
@@ -79,7 +86,10 @@ impl AdjacentChunks {
                 let mut values = [true; CHUNK_SIZE * CHUNK_SIZE];
                 if let Some(back) = self.back {
                     for (x, y) in positions.clone() {
-                        let is_block = back.read().block(x, y, CHUNK_SIZE - 1).is_some();
+                        let is_block = back
+                            .read()
+                            .block(ChunkIndex::new(x, y, CHUNK_SIZE - 1))
+                            .is_some();
                         values[AdjacentEdges::index(x, y)] = is_block;
                     }
                 }
@@ -106,32 +116,32 @@ impl AdjacentEdges {
             left: if x == 0 {
                 !self.left[Self::index(y, z)]
             } else {
-                chunk.block(x - 1, y, z).is_none()
+                chunk.block(ChunkIndex::new(x - 1, y, z)).is_none()
             },
             right: if x == CHUNK_SIZE - 1 {
                 !self.right[Self::index(y, z)]
             } else {
-                chunk.block(x + 1, y, z).is_none()
+                chunk.block(ChunkIndex::new(x + 1, y, z)).is_none()
             },
             top: if y == CHUNK_SIZE - 1 {
                 !self.top[Self::index(x, z)]
             } else {
-                chunk.block(x, y + 1, z).is_none()
+                chunk.block(ChunkIndex::new(x, y + 1, z)).is_none()
             },
             bottom: if y == 0 {
                 !self.bottom[Self::index(x, z)]
             } else {
-                chunk.block(x, y - 1, z).is_none()
+                chunk.block(ChunkIndex::new(x, y - 1, z)).is_none()
             },
             front: if z == CHUNK_SIZE - 1 {
                 !self.front[Self::index(x, y)]
             } else {
-                chunk.block(x, y, z + 1).is_none()
+                chunk.block(ChunkIndex::new(x, y, z + 1)).is_none()
             },
             back: if z == 0 {
                 !self.back[Self::index(x, y)]
             } else {
-                chunk.block(x, y, z - 1).is_none()
+                chunk.block(ChunkIndex::new(x, y, z - 1)).is_none()
             },
         }
     }
@@ -147,7 +157,7 @@ pub async fn generate_mesh(chunk: Chunk, adjacent: AdjacentChunks) -> (Mesh, Opt
     let chunk = chunk.read();
 
     for (x, y, z) in iter_blocks() {
-        let Some(block) = chunk.block(x, y, z) else {
+        let Some(block) = chunk.block(ChunkIndex::new(x, y, z)) else {
             continue;
         };
 

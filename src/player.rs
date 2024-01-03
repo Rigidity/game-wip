@@ -13,7 +13,7 @@ use big_space::{FloatingOrigin, GridCell};
 use crate::{
     block::Block,
     level::{Dirty, Level},
-    voxel::{block_pos::BlockPos, chunk::CHUNK_SIZE, chunk_pos::ChunkPos},
+    voxel::{block_pos::BlockPos, chunk::CHUNK_SIZE, chunk_index::ChunkIndex, chunk_pos::ChunkPos},
     GameState,
 };
 
@@ -26,6 +26,7 @@ impl Plugin for PlayerPlugin {
             .init_resource::<MovementSpeed>()
             .init_resource::<JumpHeight>()
             .init_resource::<MouseSensitivity>()
+            .init_resource::<Reach>()
             .add_systems(Startup, (setup_player, setup_input))
             .add_systems(
                 Update,
@@ -79,6 +80,15 @@ pub struct MouseSensitivity(pub f32);
 impl Default for MouseSensitivity {
     fn default() -> Self {
         Self(0.0001)
+    }
+}
+
+#[derive(Resource)]
+pub struct Reach(pub f64);
+
+impl Default for Reach {
+    fn default() -> Self {
+        Self(5.0)
     }
 }
 
@@ -136,6 +146,7 @@ fn break_block(
     mut commands: Commands,
     spatial_query: SpatialQuery,
     level: Res<Level>,
+    reach: Res<Reach>,
     mouse: Res<Input<MouseButton>>,
     player: Query<(Entity, &GridCell<i32>), With<Player>>,
     camera: Query<&GlobalTransform, With<PlayerCamera>>,
@@ -147,7 +158,7 @@ fn break_block(
     let Some(hit) = spatial_query.cast_ray(
         global_transform.translation().as_dvec3(),
         global_transform.forward().as_dvec3(),
-        5.0,
+        reach.0,
         true,
         SpatialQueryFilter::new().without_entities([player_entity]),
     ) else {
@@ -177,7 +188,7 @@ fn break_block(
 
     let pos = block_pos.relative_pos();
     let mut chunk = chunk.write();
-    let block_mut = chunk.block_mut(pos.0, pos.1, pos.2);
+    let block_mut = chunk.block_mut(ChunkIndex::new(pos.0, pos.1, pos.2));
 
     if block.is_none() {
         *block_mut = None;
@@ -240,7 +251,7 @@ fn raycast_blocks(
         // Check for a block at the current position
         let (x, y, z) = block_pos.relative_pos();
         if let Some(chunk) = level.chunks.get(&block_pos.chunk_pos()) {
-            if chunk.read().block(x, y, z).is_some() {
+            if chunk.read().block(ChunkIndex::new(x, y, z)).is_some() {
                 return Ok(block_pos);
             }
         };

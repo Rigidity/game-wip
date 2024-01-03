@@ -5,7 +5,10 @@ use rand_chacha::ChaCha8Rng;
 
 use crate::{
     block::Block,
-    voxel::{block_pos::BlockPos, chunk::iter_blocks, chunk_data::ChunkData, chunk_pos::ChunkPos},
+    voxel::{
+        block_pos::BlockPos, chunk::iter_blocks, chunk_data::ChunkData, chunk_index::ChunkIndex,
+        chunk_pos::ChunkPos,
+    },
 };
 
 pub struct LevelGenerator {
@@ -44,7 +47,7 @@ impl LevelGenerator {
         for (x, y, z) in iter_blocks() {
             let block_pos = pos.block_pos() + BlockPos::new(x as i64, y as i64, z as i64);
             let block = self.generate_block(block_pos);
-            *chunk.block_mut(x, y, z) = block;
+            *chunk.block_mut(ChunkIndex::new(x, y, z)) = block;
         }
         chunk
     }
