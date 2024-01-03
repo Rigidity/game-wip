@@ -17,6 +17,7 @@ num-integer = "0.1.45"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 rusqlite = { version = "0.30.0", features = ["bundled"] }
+splines = "4.3.1"
 
 [dependencies.bevy_xpbd_3d]
 version = "0.3.2"

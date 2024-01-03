@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use noise::{NoiseFn, Perlin};
+use noise::{Fbm, NoiseFn, Perlin};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use splines::{Interpolation, Key, Spline};
 
 use crate::{
     block::Block,
@@ -12,25 +12,28 @@ use crate::{
 };
 
 pub struct LevelGenerator {
-    sea_level: f64,
     temperature: Perlin,
-    elevation: NoiseMap,
+    continentalness: Fbm<Perlin>,
+    spline: Spline<f64, f64>,
 }
 
 impl LevelGenerator {
     pub fn new(seed: u64) -> Self {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
 
+        let spline = Spline::from_vec(vec![
+            Key::new(-1.0, 50.0, Interpolation::Linear),
+            Key::new(0.3, 100.0, Interpolation::Linear),
+            Key::new(1.0, 150.0, Interpolation::Linear),
+        ]);
+
+        let mut continentalness = Fbm::new(rng.gen());
+        continentalness.octaves = 4;
+
         Self {
-            sea_level: 60.0,
             temperature: Perlin::new(rng.gen()),
-            elevation: NoiseMap {
-                perlin: Perlin::new(rng.gen()),
-                octaves: 4,
-                amplitude: 15.0,
-                frequency: 2.0,
-                ..default()
-            },
+            continentalness,
+            spline,
         }
     }
 }
@@ -55,75 +58,26 @@ impl LevelGenerator {
     fn generate_block(&self, pos: BlockPos) -> Option<Block> {
         let temperature = self
             .temperature
-            .get([pos.x as f64 / 1000.0, pos.z as f64 / 1000.0]);
+            .get([pos.x as f64 / 700.0, pos.z as f64 / 700.0]);
 
-        let elevation = self
-            .elevation
-            .value_2d(pos.x as f64 / 250.0, pos.z as f64 / 250.0);
+        let continentalness = self
+            .continentalness
+            .get([pos.x as f64 / 400.0, pos.z as f64 / 400.0]);
+
+        let terrain_height = self.spline.clamped_sample(continentalness).unwrap();
 
         if temperature > 0.4 {
-            if pos.y as f64 <= self.sea_level + elevation {
+            if pos.y as f64 <= terrain_height {
                 Some(Block::Sand)
             } else {
                 None
             }
-        } else if pos.y as f64 <= self.sea_level + elevation - 1.0 {
+        } else if pos.y as f64 <= terrain_height - 1.0 {
             Some(Block::Dirt)
-        } else if pos.y as f64 <= self.sea_level + elevation {
+        } else if pos.y as f64 <= terrain_height {
             Some(Block::Grass)
         } else {
             None
         }
-    }
-}
-
-struct NoiseMap {
-    perlin: Perlin,
-    octaves: usize,
-    amplitude: f64,
-    frequency: f64,
-    persistence: f64,
-    lacunarity: f64,
-}
-
-impl Default for NoiseMap {
-    fn default() -> Self {
-        Self {
-            perlin: Perlin::default(),
-            octaves: 1,
-            amplitude: 15.0,
-            frequency: 2.0,
-            persistence: 0.5,
-            lacunarity: 2.0,
-        }
-    }
-}
-
-impl NoiseMap {
-    fn value_2d(&self, x: f64, y: f64) -> f64 {
-        let mut amplitude = self.amplitude;
-        let mut frequency = self.frequency;
-        let mut value = 0.0;
-        for _ in 0..self.octaves {
-            value += amplitude * self.perlin.get([x * frequency, y * frequency]);
-            amplitude *= self.persistence;
-            frequency *= self.lacunarity;
-        }
-        value
-    }
-
-    fn value_3d(&self, x: f64, y: f64, z: f64) -> f64 {
-        let mut amplitude = self.amplitude;
-        let mut frequency = self.frequency;
-        let mut value = 0.0;
-        for _ in 0..self.octaves {
-            value += amplitude
-                * self
-                    .perlin
-                    .get([x * frequency, y * frequency, z * frequency]);
-            amplitude *= self.persistence;
-            frequency *= self.lacunarity;
-        }
-        value
     }
 }

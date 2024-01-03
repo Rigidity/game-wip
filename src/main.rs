@@ -5,6 +5,7 @@
 use std::time::Duration;
 
 use bevy::{
+    core_pipeline::experimental::taa::TemporalAntiAliasPlugin,
     diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,
     window::WindowResolution,
 };
@@ -57,6 +58,7 @@ fn main() {
                 })
                 .disable::<TransformPlugin>()
                 .set(ImagePlugin::default_nearest()),
+            TemporalAntiAliasPlugin,
             FrameTimeDiagnosticsPlugin,
             MaterialPlugin::<ExtendedMaterial<StandardMaterial, ChunkMaterial>>::default(),
             FloatingOriginPlugin::<i32>::default(),

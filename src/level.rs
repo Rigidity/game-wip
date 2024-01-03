@@ -1,4 +1,4 @@
-use std::{f32::consts::FRAC_PI_2, sync::Arc};
+use std::sync::Arc;
 
 use bevy::{
     pbr::ExtendedMaterial,
@@ -96,19 +96,6 @@ fn setup_level(mut commands: Commands) {
         chunks: HashMap::default(),
         generator: Arc::default(),
         database: Arc::new(Mutex::new(conn)),
-    });
-
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance: 7500.0,
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 500.0, 0.0),
-            rotation: Quat::from_rotation_x(-FRAC_PI_2),
-            ..default()
-        },
-        ..default()
     });
 }
 
