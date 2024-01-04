@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 use bevy_egui::{
-    egui::{Slider, Window},
+    egui::{ScrollArea, Slider, Ui, Window},
     EguiContexts,
 };
 use big_space::{FloatingOriginSettings, GridCell};
@@ -29,6 +29,7 @@ fn render_ui(
     mut movement_speed: ResMut<MovementSpeed>,
     mut jump_height: ResMut<JumpHeight>,
     mut mouse_sensitivity: ResMut<MouseSensitivity>,
+    mut gizmo_config: ResMut<GizmoConfig>,
     mut reach: ResMut<Reach>,
     mut contexts: EguiContexts,
     player: Query<(&GridCell<i32>, &Transform, &GlobalTransform), With<Player>>,
@@ -36,12 +37,18 @@ fn render_ui(
 ) {
     let (grid_cell, transform, _global_transform) = player.single();
 
-    Window::new("Debug").show(contexts.ctx_mut(), |ui| {
+    let content = |ui: &mut Ui| {
         ui.add(Slider::new(&mut render_distance.0, 4..=24).text("Render Distance"));
         ui.add(Slider::new(&mut movement_speed.0, 0.0..=50.0).text("Movement Speed"));
         ui.add(Slider::new(&mut jump_height.0, 0.0..=100.0).text("Jump height"));
         ui.add(Slider::new(&mut mouse_sensitivity.0, 0.00001..=0.0002).text("Mouse Sensitivity"));
         ui.add(Slider::new(&mut reach.0, 0.0..=100.0).text("Reach"));
+
+        ui.separator();
+
+        ui.checkbox(&mut gizmo_config.enabled, "Debug Rendering");
+
+        ui.separator();
 
         ui.label(format!(
             "Chunk: X {}, Y {}, Z {}",
@@ -63,5 +70,9 @@ fn render_ui(
         {
             ui.label(format!("FPS: {value:>4.0}"));
         }
+    };
+
+    Window::new("Debug").show(contexts.ctx_mut(), |ui| {
+        ScrollArea::vertical().show(ui, content);
     });
 }

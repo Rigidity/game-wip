@@ -1,5 +1,5 @@
 use bevy::{
-    pbr::{MaterialExtension, MaterialExtensionKey, MaterialExtensionPipeline},
+    pbr::{MaterialPipeline, MaterialPipelineKey},
     prelude::*,
     render::{
         mesh::{MeshVertexAttribute, MeshVertexBufferLayout},
@@ -15,12 +15,12 @@ pub const ATTRIBUTE_INDEX: MeshVertexAttribute =
 
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
 pub struct ChunkMaterial {
-    #[texture(100, dimension = "2d_array")]
-    #[sampler(101)]
+    #[texture(0, dimension = "2d_array")]
+    #[sampler(1)]
     pub texture: Handle<Image>,
 }
 
-impl MaterialExtension for ChunkMaterial {
+impl Material for ChunkMaterial {
     fn vertex_shader() -> ShaderRef {
         "shaders/chunk.wgsl".into()
     }
@@ -30,10 +30,10 @@ impl MaterialExtension for ChunkMaterial {
     }
 
     fn specialize(
-        _pipeline: &MaterialExtensionPipeline,
+        _pipeline: &MaterialPipeline<Self>,
         descriptor: &mut RenderPipelineDescriptor,
         layout: &MeshVertexBufferLayout,
-        _key: MaterialExtensionKey<Self>,
+        _key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
         let vertex_layout = layout.get_layout(&[
             Mesh::ATTRIBUTE_POSITION.at_shader_location(0),

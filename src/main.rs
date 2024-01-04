@@ -5,9 +5,7 @@
 use std::time::Duration;
 
 use bevy::{
-    core_pipeline::experimental::taa::TemporalAntiAliasPlugin,
-    diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,
-    window::WindowResolution,
+    diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, prelude::*, window::WindowResolution,
 };
 
 mod block;
@@ -24,8 +22,8 @@ mod voxel;
 use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
 use big_space::{
-    bevy_xpbd::floating_origin_sync::FloatingOriginSyncPlugin, FloatingOriginPlugin,
-    FloatingOriginSettings,
+    bevy_xpbd::floating_origin_sync::FloatingOriginSyncPlugin, debug::FloatingOriginDebugPlugin,
+    FloatingOriginPlugin, FloatingOriginSettings,
 };
 use chunk_material::ChunkMaterial;
 use egui_menu::EguiMenuPlugin;
@@ -58,9 +56,9 @@ fn main() {
                 })
                 .disable::<TransformPlugin>()
                 .set(ImagePlugin::default_nearest()),
-            TemporalAntiAliasPlugin,
+            FloatingOriginDebugPlugin::<i32>::default(),
             FrameTimeDiagnosticsPlugin,
-            MaterialPlugin::<ExtendedMaterial<StandardMaterial, ChunkMaterial>>::default(),
+            MaterialPlugin::<ChunkMaterial>::default(),
             FloatingOriginPlugin::<i32>::default(),
             PhysicsPlugins::default().build().disable::<SyncPlugin>(),
             FloatingOriginSyncPlugin::<i32>::default(),
@@ -81,6 +79,10 @@ fn main() {
         .insert_resource(PrepareConfig {
             position_to_transform: false,
             transform_to_position: true,
+        })
+        .insert_resource(GizmoConfig {
+            enabled: false,
+            ..default()
         })
         .insert_resource(Time::<Physics>::from_timestep(TimestepMode::Fixed {
             delta: Duration::from_secs_f32(1.0 / 60.0),
