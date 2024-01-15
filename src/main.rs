@@ -5,7 +5,8 @@
 use std::time::Duration;
 
 use bevy::{
-    diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, prelude::*, window::WindowResolution,
+    diagnostic::FrameTimeDiagnosticsPlugin, math::DVec3, pbr::ExtendedMaterial, prelude::*,
+    window::WindowResolution,
 };
 
 mod block;
@@ -58,7 +59,7 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
             FloatingOriginDebugPlugin::<i32>::default(),
             FrameTimeDiagnosticsPlugin,
-            MaterialPlugin::<ChunkMaterial>::default(),
+            MaterialPlugin::<ExtendedMaterial<StandardMaterial, ChunkMaterial>>::default(),
             FloatingOriginPlugin::<i32>::default(),
             PhysicsPlugins::default().build().disable::<SyncPlugin>(),
             FloatingOriginSyncPlugin::<i32>::default(),

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use bevy::{
+    pbr::ExtendedMaterial,
     prelude::*,
     render::primitives::Aabb,
     tasks::{block_on, AsyncComputeTaskPool, Task},
@@ -43,7 +44,7 @@ impl Plugin for LevelPlugin {
 }
 
 #[derive(Resource)]
-struct ChunkMaterialInstance(Handle<ChunkMaterial>);
+struct ChunkMaterialInstance(Handle<ExtendedMaterial<StandardMaterial, ChunkMaterial>>);
 
 #[derive(Resource)]
 pub struct Level {
@@ -101,10 +102,16 @@ fn setup_level(mut commands: Commands) {
 fn setup_material(
     mut commands: Commands,
     block_array: Res<BlockArray>,
-    mut materials: ResMut<Assets<ChunkMaterial>>,
+    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, ChunkMaterial>>>,
 ) {
-    let material_handle = materials.add(ChunkMaterial {
-        texture: block_array.clone(),
+    let material_handle = materials.add(ExtendedMaterial {
+        base: StandardMaterial {
+            perceptual_roughness: 1.0,
+            ..default()
+        },
+        extension: ChunkMaterial {
+            texture: block_array.clone(),
+        },
     });
     commands.insert_resource(ChunkMaterialInstance(material_handle));
 }
